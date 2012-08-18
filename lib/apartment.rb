@@ -113,4 +113,13 @@ module Apartment
 
   # Raised when trying to create a schema that already exists
   SchemaExists = Class.new(TenantExists)
+
+  def self.method_missing(meth, *args, &block)
+    if meth.to_s =~ /^use_(.+)$/
+      Apartment::Tenant.switch($1)
+    else
+      super
+    end
+  end
+
 end
