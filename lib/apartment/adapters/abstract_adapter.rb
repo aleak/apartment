@@ -113,16 +113,21 @@ module Apartment
       #   Establish a new connection for each specific excluded model
       #
       def process_excluded_models
+        query_cache_enabled = Apartment.connection.query_cache_enabled
         # All other models will shared a connection (at Apartment.connection_class) and we can modify at will
         Apartment.excluded_models.each do |excluded_model|
-          excluded_model.constantize.establish_connection @config
+          instance = excluded_model.constantize
+          instance.establish_connection @config
+          instance.enable_query_cache! if query_cache_enabled
         end
       end
 
       #   Reset the tenant connection to the default
       #
       def reset
+        query_cache_enabled = Apartment.connection.query_cache_enabled
         Apartment.establish_connection @config
+        Apartment.connection.enable_query_cache! if query_cache_enabled
       end
 
       #   Load the rails seed file into the db
@@ -150,8 +155,11 @@ module Apartment
       #   @param {String} tenant Database name
       #
       def connect_to_new(tenant)
+        query_cache_enabled = Apartment.connection.query_cache_enabled
+
         Apartment.establish_connection multi_tenantify(tenant)
         Apartment.connection.active?   # call active? to manually check if this connection is valid
+        Apartment.connection.enable_query_cache! if query_cache_enabled
 
       rescue *rescuable_exceptions
         raise DatabaseNotFound, "The tenant #{environmentify(tenant)} cannot be found."
