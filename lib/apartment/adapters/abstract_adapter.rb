@@ -57,7 +57,7 @@ module Apartment
       #
       def drop(tenant)
         # Apartment.connection.drop_database   note that drop_database will not throw an exception, so manually execute
-        Apartment.connection.execute("DROP DATABASE #{environmentify(tenant)}" )
+        Apartment.connection.execute("DROP DATABASE #{quote_table_name(environmentify(tenant))}" )
 
       rescue *rescuable_exceptions
         raise DatabaseNotFound, "The tenant #{environmentify(tenant)} cannot be found"
