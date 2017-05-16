@@ -213,8 +213,11 @@ module Apartment
       #
       def import_database_schema
         ActiveRecord::Schema.verbose = false    # do not log schema load output.
-
-        load_or_abort(Apartment.database_schema_file) if Apartment.database_schema_file
+        if Rails.application.config.active_record.schema_format == :sql
+          execute_or_abort("#{Rails.root}/db/structure.sql")
+        else
+          load_or_abort("#{Rails.root}/db/schema.rb")
+        end
       end
 
       #   Return a new config that is multi-tenanted
@@ -238,6 +241,18 @@ module Apartment
       def load_or_abort(file)
         if File.exists?(file)
           load(file)
+        else
+          abort %{#{file} doesn't exist yet}
+        end
+      end
+
+      #   Load a SQL file and execute it or abort if it doesn't exists
+      #
+      def execute_or_abort(file)
+        if File.exists?(file)
+          structure_sql = open(file, 'r').read
+          # structure_sql.gsub! /public/
+          ActiveRecord::Base.connection.execute(structure_sql)
         else
           abort %{#{file} doesn't exist yet}
         end
